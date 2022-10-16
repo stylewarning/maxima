@@ -1,3 +1,10 @@
+(cl:defpackage #:maxima-configure
+  (:use #:cl)
+  (:export #:configure)
+  (:documentation "A package containing functions to configure Maxima for a new build."))
+
+(cl:in-package #:maxima-configure)
+
 (defun replace-substring (in-string old new) 
   (let ((result ""))
     (do ((begin 0)
@@ -75,32 +82,33 @@
           (format t "Warning: Problem parsing version information. ")
           (format t "Found: \"~a\"~%~%" version))))))
 
-(defvar *maxima-lispname* #+clisp "clisp"
-	#+cmu "cmucl"
-	#+scl "scl"
-	#+sbcl "sbcl"
-	#+gcl "gcl"
-	#+allegro "acl"
-	#+(and openmcl (not 64-bit-target)) "openmcl"
-	#+(and openmcl 64-bit-target) "ccl64"
-	#+abcl "abcl"
-	#+ecl "ecl"
-	#-(or clisp cmu scl sbcl gcl allegro ccl abcl ecl) "unknownlisp")
+(defvar *maxima-lispname*
+  #+clisp "clisp"
+  #+cmu "cmucl"
+  #+scl "scl"
+  #+sbcl "sbcl"
+  #+gcl "gcl"
+  #+allegro "acl"
+  #+(and openmcl (not 64-bit-target)) "openmcl"
+  #+(and openmcl 64-bit-target) "ccl64"
+  #+abcl "abcl"
+  #+ecl "ecl"
+  #-(or clisp cmu scl sbcl gcl allegro ccl abcl ecl) "unknownlisp")
 
 (defun configure (&key (interactive t) (verbose nil)
-		  is-win32 
-		  maxima-directory 
-		  posix-shell
-		  clisp-name
-		  cmucl-name
-		  scl-name
-		  acl-name
-		  openmcl-name
-		  ccl64-name
-		  sbcl-name
-		  ecl-name
-		  gcl-name)
-  (let ((prefix (if maxima-directory 
+		       is-win32
+		       maxima-directory
+		       posix-shell
+		       clisp-name
+		       cmucl-name
+		       scl-name
+		       acl-name
+		       openmcl-name
+		       ccl64-name
+		       sbcl-name
+		       ecl-name
+		       gcl-name)
+  (let ((prefix (if maxima-directory
 		    maxima-directory
 		    (default-directory-string)))
 	(win32-string (if is-win32 "true" "false"))
@@ -172,11 +180,10 @@
 			      (cons "@ECL_NAME@" ecl)
 			      (cons "@GCL_NAME@" gcl)
 			      (cons "@SBCL_NAME@" sbcl)))
-    (if verbose
-	(mapc #'(lambda (pair) (format t "~a=~a~%" (first pair) (rest pair)))
-	      substitutions))
-    (mapc #'(lambda (filename)
-	      (let ((out-filename (replace-substring filename ".in" "")))
-		(process-file filename out-filename substitutions)
-		(format t "Created ~a~%" out-filename)))
-	  files)))
+    (when verbose
+      (dolist (pair substitutions)
+        (format t "~a=~a~%" (first pair) (rest pair))))
+    (dolist (filename files)
+      (let ((out-filename (replace-substring filename ".in" "")))
+	(process-file filename out-filename substitutions)
+	(format t "Created ~a~%" out-filename)))))
